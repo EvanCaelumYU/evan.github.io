@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="zh-cn">
 <head>
@@ -210,4 +211,218 @@
 
   </script>
 </body>
+=======
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="UTF-8">
+  <title>3D 视频轮播</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+    .carousel {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 90vw;
+      height: 60vh;
+      transform: translate(-50%, -50%);
+      perspective: 1200px;
+      overflow: visible;
+    }
+    .video-item {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform-style: preserve-3d;
+      transition: 
+        transform 0.5s cubic-bezier(.4,2,.6,1), 
+        filter 0.5s, 
+        z-index 0s;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #222;
+    }
+    video {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      aspect-ratio: 16/9;
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+  <div class="carousel" id="carousel"></div>
+  <script>
+    // 视频文件名
+    const videos = [
+      'krump.mov', '兽.mov', 'tui.mov', 'lad.mov', 'rp.mov', 'soul.mov', '1.mov'
+    ];
+    // 轮播参数
+    const centerIndex = 3; // 中间视频索引
+    const itemCount = videos.length;
+    const baseWidth = 850; // 中心视频宽度
+    const baseHeight = baseWidth * 9 / 16;
+    const scaleStep = 0.85; // 每侧缩放比例（更大一点）
+    const xStep = 700; // 每侧水平偏移（更分散）
+    const zStep =  -120; // 每侧纵深偏移（更分散）
+    const yStep = -100; // 每侧上移
+    const brightnessStep = 0.16; // 每侧亮度递减
+    const angle = 5; // 俯视角度
+    const sideVisiblePercent = 1; // 最侧视频可见部分
+
+    let current = centerIndex; // 当前居中视频索引
+
+    // 创建视频元素
+    const carousel = document.getElementById('carousel');
+    let videoEls = [];
+
+    function createVideos() {
+      carousel.innerHTML = '';
+      videoEls = [];
+      for (let i = 0; i < itemCount; i++) {
+        const div = document.createElement('div');
+        div.className = 'video-item';
+        const video = document.createElement('video');
+        video.src = videos[i];
+        video.loop = true;
+        video.muted = true;
+        video.preload = 'auto';
+        video.playsInline = true;
+        video.autoplay = true;
+        div.appendChild(video);
+        carousel.appendChild(div);
+        videoEls.push({div, video});
+      }
+    }
+
+    // 更新视频位置、大小、亮度、音量
+    function updateVideos() {
+      for (let i = 0; i < itemCount; i++) {
+        // 计算相对中心的偏移
+        let offset = ((i - current) + itemCount) % itemCount;
+        if (offset > itemCount / 2) offset -= itemCount; // 取最近方向
+        // 视觉参数
+        let scale = Math.pow(scaleStep, Math.abs(offset));
+        let width = baseWidth * scale;
+        let height = baseHeight * scale;
+        let x = offset * xStep * scale;
+        let z = Math.abs(offset) * zStep;
+        let y = yStep * Math.abs(offset) - Math.abs(offset) * 8;
+        let brightness = 1 - Math.abs(offset) * brightnessStep;
+        if (brightness < 0.4) brightness = 0.4;
+        // 最侧视频部分出屏
+        if (Math.abs(offset) === 3) {
+          x = x * sideVisiblePercent;
+        }
+        // 俯视角度
+        let rotateX = -angle;
+        // 层级
+        let zIndex = 10 - Math.abs(offset);
+
+        // 应用样式
+        const {div, video} = videoEls[i];
+        div.style.width = width + 'px';
+        div.style.height = height + 'px';
+        div.style.zIndex = zIndex;
+        div.style.filter = `brightness(${brightness})`;
+        div.style.transform = `
+          translate(-50%, -50%)
+          translateX(${x}px)
+          translateY(${y}px)
+          translateZ(${z}px)
+          rotateX(${rotateX}deg)
+        `;
+
+        // 中心视频播放有声，其余静音
+        if (offset === 0) {
+          video.muted = false;
+          video.volume = 1;
+          video.style.boxShadow = '0 12px 48px 0 rgba(255,255,255,0.15)';
+        } else {
+          video.muted = true;
+          video.volume = 0;
+          video.style.boxShadow = 'none';
+        }
+        // 自动播放
+        if (video.paused) video.play().catch(()=>{});
+      }
+    }
+
+    // 鼠标拖动切换
+    let startX = null;
+    let dragging = false;
+    let moved = false;
+
+    function onPointerDown(e) {
+      startX = e.clientX || e.touches[0].clientX;
+      dragging = true;
+      moved = false;
+    }
+    function onPointerMove(e) {
+      if (!dragging) return;
+      let x = e.clientX || e.touches[0].clientX;
+      if (Math.abs(x - startX) > 40 && !moved) {
+        if (x < startX) {
+          // 向左滑，中心右移
+          current = (current + 1) % itemCount;
+        } else {
+          // 向右滑，中心左移
+          current = (current - 1 + itemCount) % itemCount;
+        }
+        updateVideos();
+        moved = true;
+        startX = x;
+      }
+    }
+    function onPointerUp(e) {
+      dragging = false;
+      moved = false;
+    }
+
+    // 事件绑定
+    carousel.addEventListener('mousedown', onPointerDown);
+    carousel.addEventListener('mousemove', onPointerMove);
+    carousel.addEventListener('mouseup', onPointerUp);
+    carousel.addEventListener('mouseleave', onPointerUp);
+    carousel.addEventListener('touchstart', onPointerDown, {passive: false});
+    carousel.addEventListener('touchmove', onPointerMove, {passive: false});
+    carousel.addEventListener('touchend', onPointerUp);
+
+    // 初始化
+    createVideos();
+    updateVideos();
+
+    // 兼容自动播放策略
+    document.body.addEventListener('click', () => {
+      videoEls.forEach(({video}) => video.play().catch(()=>{}));
+    }, {once:true});
+
+    // 自动轮播（2分钟无操作自动切换）
+    let inactivityTimer = null;
+    function resetInactivityTimer() {
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        current = (current + 1) % itemCount;
+        updateVideos();
+        resetInactivityTimer();
+      }, 2* 60 * 1000); // 2分钟
+    }
+    // 监听所有用户操作重置计时器
+    ['mousedown','mousemove','mouseup','touchstart','touchmove','touchend','keydown','wheel'].forEach(evt => {
+      window.addEventListener(evt, resetInactivityTimer, {passive:true});
+    });
+
+  </script>
+</body>
+>>>>>>> f01465b (RegionCLIP_pretrained_ckpt)
 </html>
