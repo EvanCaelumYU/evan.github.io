@@ -51,7 +51,7 @@
   <script>
     // 视频文件名
     const videos = [
-      'krump.mov', '兽.mov', 'tui.mov', 'lad.mov', 'rp.mov', 'soul.mov', '1.mov'
+      'video/krump.mov', 'video/兽.mov', 'video/tui.mov', 'video/lad.mov', 'video/rp.mov', 'video/soul.mov', 'video/1.mov'
     ];
     // 轮播参数
     const centerIndex = 3; // 中间视频索引
@@ -188,10 +188,20 @@
     createVideos();
     updateVideos();
 
-    // 兼容自动播放策略
-    document.body.addEventListener('click', () => {
-      videoEls.forEach(({video}) => video.play().catch(()=>{}));
-    }, {once:true});
+    // // 兼容自动播放策略
+    // document.body.addEventListener('click', () => {
+    //   videoEls.forEach(({video}) => video.play().catch(()=>{}));
+    //   // 只在第一次点击后，取消中心视频静音
+    //   const center = videoEls[current].video;
+    //   center.muted = false;
+    //   center.volume = 1;
+    // }, {once:true});
+
+    // // 页面加载后尝试静音自动播放
+    // videoEls.forEach(({video}) => {
+    //   video.muted = false;
+    //   video.play().catch(()=>{});
+    // });
 
     // 自动轮播（2分钟无操作自动切换）
     let inactivityTimer = null;
